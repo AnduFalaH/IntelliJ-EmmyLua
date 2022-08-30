@@ -25,9 +25,10 @@ import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiFile;
+import com.intellij.psi.TokenType;
+import com.intellij.psi.tree.TokenSet;
 import com.intellij.util.IncorrectOperationException;
-import com.tang.intellij.lua.psi.LuaElementFactory;
-import com.tang.intellij.lua.psi.LuaFileUtil;
+import com.tang.intellij.lua.psi.*;
 import org.jetbrains.annotations.NotNull;
 
 public class QuickRequireAction extends BaseIntentionAction {
@@ -59,8 +60,9 @@ public class QuickRequireAction extends BaseIntentionAction {
             var elements = node.getChildren(null);
             ASTNode nodeInsert = elements[0];
             for (ASTNode element : elements) {
-                if (hasRequireStatement(element)) {
-                    nodeInsert = element;
+                var target = getInsertNode(element);
+                if (target != null) {
+                    nodeInsert = target;
                     break;
                 }
             }
@@ -76,8 +78,27 @@ public class QuickRequireAction extends BaseIntentionAction {
         }));
     }
 
-    private boolean hasRequireStatement(ASTNode node){
-        return node.getChars().toString().contains("require");
+    private ASTNode getInsertNode(ASTNode node){
+        if (node.getElementType() != LuaTypes.LOCAL_DEF){
+            // only module-level LOCAL_DEF should be proceeded.
+            return null;
+        }
+        if (!node.getChars().toString().contains("require")) {
+            return null;
+        }
+        // Two conditions:
+        // has DOC before local: Element(DOC_COMMENT), PsiWhiteSpace, PsiElement(local), ...
+        // or: PsiElement(local), ...
+        // should not break require statement with DOC_COMMENT
+        if(node.getChildren(TokenSet.create(LuaTypes.DOC_COMMENT)).length == 0){
+            return node;
+        }
+        // statement with DOC_COMMENT, find next none WHITE_SPACE node and return
+        var target = node.getTreeNext();
+        while(target != null && target.getElementType() == TokenType.WHITE_SPACE) {
+            target = target.getTreeNext();
+        }
+        return target;
     }
 
     private String findRequirePath(@NotNull Project project, String name){
