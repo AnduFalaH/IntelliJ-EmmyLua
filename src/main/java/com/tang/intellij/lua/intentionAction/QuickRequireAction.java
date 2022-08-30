@@ -50,7 +50,7 @@ public class QuickRequireAction extends BaseIntentionAction {
 
     @Override
     public boolean isAvailable(@NotNull Project project, Editor editor, PsiFile psiFile) {
-        return true; // TODO: condition
+        return LuaFileUtil.INSTANCE.findFile(project, name) != null;
     }
 
     @Override
