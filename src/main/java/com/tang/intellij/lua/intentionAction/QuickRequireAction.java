@@ -56,6 +56,10 @@ public class QuickRequireAction extends BaseIntentionAction {
     @Override
     public void invoke(@NotNull Project project, Editor editor, PsiFile psiFile) throws IncorrectOperationException {
         ApplicationManager.getApplication().invokeLater(() -> WriteCommandAction.writeCommandAction(project).run(() -> {
+            var requirePath = findRequirePath(project, name);
+            if(requirePath == null) {
+                return;
+            }
             ASTNode node = psiFile.getNode();
             var elements = node.getChildren(null);
             ASTNode nodeInsert = elements[0];
@@ -65,10 +69,6 @@ public class QuickRequireAction extends BaseIntentionAction {
                     nodeInsert = target;
                     break;
                 }
-            }
-            var requirePath = findRequirePath(project, name);
-            if(requirePath == null) {
-                return;
             }
             String text = String.format("local %1$s = require(\"%2$s\")", name, requirePath);
             var file = LuaElementFactory.INSTANCE.createFile(project, text);
