@@ -40,12 +40,12 @@ public class QuickRequireAction extends BaseIntentionAction {
 
     @Override
     public @IntentionName @NotNull String getText() {
-        return "Auto require " + name;
+        return "Quick require " + name;
     }
 
     @Override
     public @NotNull @IntentionFamilyName String getFamilyName() {
-        return "Auto require";
+        return "Quick require";
     }
 
     @Override
